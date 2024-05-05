@@ -22,20 +22,83 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Project Goals
 
+text text text
+
 # Progress
 
 ## Strains
 
-| Strain | Person | Done? |
-|--------|--------|-------|
-| B728a  | Sara   | Yes   |
-| 205    | Sara   | Yes   |
-| 215    | Sara   | Yes   |
-| 216    | Sara   | Yes   |
-| 220    | Sara   | Yes   |
-| 227    | Sara   | Yes   |
-| 228    | Sara   | Yes   |
-| 194    | Havi   | No    |
-| 204    | Havi   | No    |
-| 14     | Havi   | No    |
-| 6      | Havi   | No    |
+| Strain | Person | Reps |
+|--------|--------|------|
+| B728a  | Sara   | 3    |
+| 205    | Sara   | 3    |
+| 215    | Sara   | 2    |
+| 216    | Sara   | 3    |
+| 220    | Sara   | 3    |
+| 227    | Sara   | 3    |
+| 228    | Sara   | 3    |
+| 194    | Havi   | 0    |
+| 204    | Havi   | 0    |
+| 14     | Havi   | 0    |
+| 6      | Havi   | 0    |
+
+# Protocol
+
+*Date Updated: 2023 November 24*
+
+**Day -3: Plating**
+
+1.  From -80°C/current plate, plate *Pseudomonas* strains/individual colonies on KB + NA (15 𝜇g/mL) + NFT (50 𝜇g/mL) plates.
+2.  Incubate for 24-72 hours at 28°C.
+
+**Day 0: Overnights of *Pseudomonas***
+
+1.  Pipette 10 mL of KB + NA (15 𝜇g/mL) + NFT (50 𝜇g/mL) media in 15 mL culture tube.
+    -   *Note: Make 1 tube/pot and don’t forget a blank!*
+2.  Transfer a colony of *Pseudomonas* from plate to media.
+3.  Incubate in benchtop shaker at 28C overnight (\~18 hrs).
+
+**Day 1: Spraying**
+
+1.  Transfer overnight *Pseudomonas* culture from culture tube to falcon tube.
+2.  Pellet cells by centrifuging for 10 min on max speed
+3.  Discard supernatant.
+4.  Add 1 mL 10mM MgCl2 buffer and resuspend/vortex.
+5.  Pellet and discard supernatant again.
+6.  Add \~25 mL 10mM MgCl2 buffer and resuspend/vortex.
+7.  Transfer 100 ul of sample to a blank cuvette.
+8.  Measure OD of bacterial resuspension (include blank!).
+    -   Goal: OD = 0.2
+9.  Transfer 20 mL of bacterial resuspension into autoclaved spray bottle.
+    -   Clean tops using ethanol and sterile water.
+10. Retrieve 14 day old plants from plant room and place in biosafety cabinet.
+11. Spray \~20 mL bacterial solution onto all the leaves and all plant surfaces (stem, top, bottom) of pot until runoff (starting to drip).
+12. Allow plant to dry in the biosafety cabinet.
+13. Move plant to tent downstairs and note time.
+14. Incubate for 72 hours in a tent at 70F and 85% humidity.
+
+**Day 4: Sampling**
+
+1.  Retrieve plants from plant room and place in biosafety cabinet.
+2.  Sterilize cork borer and forceps using ethanol flame and place in a sterile petri dish in biosafety cabinet.
+3.  Take 10 samples from all over each plant in the pot.
+    -   Place all samples from a plant in a single falcon tube, 10 discs/tube.
+
+        -   Will end with end with 3 falcon tubes and 30 samples if sampling 3 plants (1 pot).
+
+    -   Add 10 mL of 10mM MgCl2 buffer to falcon tubes.
+4.  Sonicate falcon tubes for 10 min.
+5.  Vortex to dislodge epiphytic bacteria.
+6.  Make serial dilutions (2 technical replicate/sample) in 96 well plate using multichannel pipette.
+    -   900 uL buffer and 100 uL sample/dilution.
+7.  Plate serial dilutions on KB + NA (15 ug/mL) + NFT (50 ug/mL) plates.
+    -   4 plates per sample
+
+    -   100 ul per plate
+8.  Allow plates to dry then flip upside and incubate at 28C for 24 hrs.
+
+**Day 5: Counting**
+
+1.  Photograph plates.
+2.  Count colonies on each plate and note in spreadsheet.
+3.  Calculate CFU/10 mL bacterial resuspension (ie. per sample).
