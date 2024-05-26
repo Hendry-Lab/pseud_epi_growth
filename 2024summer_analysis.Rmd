@@ -23,15 +23,32 @@ knitr::opts_chunk$set(echo = TRUE, tidy.opts = list(width.cutoff = 60), tidy = T
 ## Load Libraries
 
 ```{r load-packages}
-pacman::p_load(ggplot2, readxl, dplyr, tidyverse, cowplot, knitr, install = FALSE)
+pacman::p_load(ggplot2, readxl, ggbeeswarm, dplyr, tidyverse, cowplot, knitr, install = FALSE)
 ```
 
 ```{r load-data}
-pseud_epi_growth_2024summer_R <- read_excel("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/pseud_epi_growth_2024summer_R.xlsx", 
-+     col_types = c("numeric", "date", "numeric", 
-+         "text", "text", "text", "numeric"))
+pseud_epi_growth_2024summer_R <- read_excel("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/pseud_epi_growth_2024summer_R.xlsx")
 ```
 
 ```{r plot}
 
+# Replace NA with a lower value or remove them for visualization
+# For this example, I'll remove rows with NA in CFU_per_10_leafdiscs
+cleaned_data <- pseud_epi_growth_2024summer_R %>% 
+  filter(!is.na(CFU_per_10_leafdiscs))
+
+# Convert CFU_per_10_leafdiscs to numeric, handling scientific notation
+cleaned_data$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", cleaned_data$CFU_per_10_leafdiscs))
+
+# Create the box plot
+ggplot(data = cleaned_data, aes(x = factor(number), y = CFU_per_10_leafdiscs, color = number, fill = number)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.3) +
+  geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
+  labs(title = "CFU per 10 Leaf Discs Across Samples",
+       x = "-80 Strain #",
+       y = "CFU per 10 Leaf Discs",
+       caption = "Data collected during Summer 2024") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
