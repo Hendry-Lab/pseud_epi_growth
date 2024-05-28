@@ -31,15 +31,15 @@ Obtain data on epiphytic growth ability of different *Pseudomonas* strains to co
 | Strain  | Person | Reps |
 |---------|--------|------|
 | B728a   | Sara   | 3    |
-| 205     | Sara   | 2    |
+| 205     | Sara   | 2\*  |
 | 215     | Sara   | 2    |
-| 216     | Sara   | 3    |
-| 220     | Sara   | 3    |
+| 216     | Sara   | 3\*  |
+| 220     | Sara   | 3\*  |
 | 227     | Sara   | 3    |
-| 228     | Sara   | 3    |
+| 228     | Sara   | 3\*  |
 | 194     | Havi   | 3    |
-| 204     | Havi   | 2    |
-| 14      | Havi   | 0    |
+| 204     | Havi   | 3    |
+| 14      | Havi   | 2    |
 | 6       | Havi   | 0    |
 | **200** | Havi   | 0    |
 | **221** | Havi   | 0    |
