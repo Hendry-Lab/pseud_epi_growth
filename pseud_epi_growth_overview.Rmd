@@ -39,9 +39,9 @@ Obtain data on epiphytic growth ability of different *Pseudomonas* strains to co
 | 228     | Sara   | 3\*  |
 | 194     | Havi   | 3    |
 | 204     | Havi   | 3    |
-| 14      | Havi   | 2    |
+| 14      | Havi   | 3    |
 | 6       | Havi   | 0    |
-| **200** | Havi   | 0    |
+| **200** | Havi   | 3    |
 | **221** | Havi   | 0    |
 
 # Protocol
