@@ -46,8 +46,7 @@ ggplot(data = cleaned_data, aes(x = factor(number), y = CFU_per_10_leafdiscs, co
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   labs(title = "CFU per 10 Leaf Discs Across Samples",
        x = "-80 Strain #",
-       y = "CFU per 10 Leaf Discs",
-       caption = "Data collected during Summer 2024") +
+       y = "CFU per 10 Leaf Discs") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1))
