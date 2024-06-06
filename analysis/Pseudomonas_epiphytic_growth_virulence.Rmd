@@ -1,0 +1,253 @@
+---
+title: "Pseudomonas Epiphytic Growth and Virulence Analysis"
+date: "2024 Summer"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    css: css/tufte.css
+    toc: true
+    toc_float: true
+  word_document:
+    toc: true
+    reference_docx: templates/wordstyletemplate.docx
+    keep_md: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts = list, tidy = TRUE, fig.align = "center", # Always relative to the document directory
+                      fig.path = "../figures/", # Send any figures to this folder
+                      dev = "png",  # Export figures as PNG
+                      dpi = 300)  # Set the resolution to 300 dots per inch (dpi)
+```
+
+# Load Libraries
+
+```{r load-packages}
+pacman::p_load(ggplot2, readxl, ggbeeswarm, dplyr, tidyverse, devtools, cowplot, knitr, survival, here, tibble, lubridate, formatR, gridExtra, ggsurvfit, gtsummary, tidycmprsk, install = FALSE)
+
+# Load strain colors
+# green = syringae, blue = fluorescencs, brown = parallactic
+strain_colors <- c(
+  "194" = "sienna",
+  "200" = "dodgerblue",
+  "204" = "dodgerblue2",
+  "205" = "dodgerblue3",
+  "215" = "springgreen3",
+  "216" = "dodgerblue4",
+  "220" = "sienna4",
+  "221" = "deepskyblue",
+  "227" = "deepskyblue2",
+  "228" = "deepskyblue3",
+  "B728a" = "springgreen4",
+  "Cit7" = "springgreen2",
+  "Control" = "black",
+  "pisi" = "springgreen1")
+```
+
+```{r load-data}
+pseud_epi_growth_2024summer_R <- read_excel("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/pseud_epi_growth_2024summer_R.xlsx")
+
+aphid_virulence_data <- read_csv("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/others_data/virulence_new_all.csv")
+```
+
+# Goals
+
+-   Create Kaplan-Meier curve for Pseud. virulence data
+-   Use stats (Wilcox?) to determine statistical significance of each strain
+-   Compare virulence data with epiphitic growth ability
+
+# Virulence Analysis
+
+Note: *In order to help me with this analysis, I am using the following sites - [Survival Analysis in R](https://www.emilyzabor.com/tutorials/survival_analysis_in_r_tutorial.html) and [Hazard Ratio: Interpretation & Definition](https://statisticsbyjim.com/probability/hazard-ratio/).*
+
+## Subset Data
+
+```{r subset-data-cit7}
+cit7_data <- subset(aphid_virulence_data, treatment == "Cit7")
+```
+
+## Caclulcate survival probabilities for each strain and create dataframe
+
+```{r test-survival}
+# Fit the survival model
+km_fit <- survfit(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
+
+# Extract survival probabilities at specific time points
+time_points <- c(24, 48, 72)
+km_summary <- summary(km_fit, times = time_points)
+
+# Initialize empty lists to store the results
+times_list <- list()
+treatment_list <- list()
+surv_prob_list <- list()
+
+# Loop over each treatment group and extract survival probabilities at specified time points
+for (i in 1:length(km_fit$strata)) {
+  treatment_name <- names(km_fit$strata)[i]
+  for (t in time_points) {
+    idx <- which(km_summary$time == t & km_summary$strata == treatment_name)
+    if (length(idx) > 0) {
+      times_list <- c(times_list, t)
+      treatment_list <- c(treatment_list, treatment_name)
+      surv_prob_list <- c(surv_prob_list, km_summary$surv[idx])
+    } else {
+      times_list <- c(times_list, t)
+      treatment_list <- c(treatment_list, treatment_name)
+      surv_prob_list <- c(surv_prob_list, NA)
+    }
+  }
+}
+
+# Create the data frame
+surv_probs <- data.frame(
+  time = unlist(times_list),
+  treatment = unlist(treatment_list),
+  surv_prob = unlist(surv_prob_list)
+)
+
+# Replace "treatment=" with an empty string
+surv_probs$treatment <- gsub("treatment=", "", surv_probs$treatment)
+
+# Print the data frame
+print(surv_probs)
+
+# If you need to save it to a file, you can use the following command
+# write.csv(surv_probs, "survival_probabilities.csv", row.names = FALSE)
+```
+
+## Make Kaplan-Meier Plot
+
+### Cohort Survival Curve
+
+```{r Kaplan-Meier}
+survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>% 
+  ggsurvfit() +
+  labs(
+    x = "Hours",
+    y = "Overall survival probability"
+  ) +
+  scale_color_manual(values = strain_colors)
+```
+
+# Epiphytic Growth Analysis
+
+## Calculate mean/variance epiphytic growth ability
+
+```{r mean-epi-growth}
+# Replace NA with a lower value or remove them for visualization
+# For this example, I'll remove rows with NA in CFU_per_10_leafdiscs
+cleaned_data <- pseud_epi_growth_2024summer_R %>% 
+  filter(!is.na(CFU_per_10_leafdiscs))
+
+# Convert CFU_per_10_leafdiscs to numeric, handling scientific notation
+cleaned_data$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", cleaned_data$CFU_per_10_leafdiscs))
+
+
+# Calculate mean and variance for each strain
+strain_stats <- cleaned_data %>%
+  group_by(strain) %>%
+  summarise(
+    mean_CFU = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
+    sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE)
+  )
+
+# Print the calculated statistics
+print(strain_stats)
+```
+
+## Plot Epiphytic Growth
+
+```{r epi-growth}
+# Create the box plot
+ggplot(data = cleaned_data, aes(x = strain, y = CFU_per_10_leafdiscs, color = strain, fill = strain)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.3) +
+  geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
+  labs(title = "CFU per 10 Leaf Discs Across Samples",
+       x = "-80 Strain #",
+       y = "CFU per 10 Leaf Discs") +
+  theme_minimal() +
+  scale_fill_manual(values = strain_colors) + 
+  scale_color_manual(values = strain_colors) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+```
+
+# Combine epiphytic and virulence data
+
+```{r combine-epi-virulence}
+# Assuming strain_stats has a column 'strain' and surv_probs has a column 'treatment'
+# Rename columns if necessary to match the key for joining
+strain_stats <- strain_stats %>% rename(treatment = strain)
+
+# Combine strain_stats and surv_probs using left_join
+epi_virulence_data <- left_join(strain_stats, surv_probs, by = "treatment")
+
+# Print the combined data
+print(epi_virulence_data)
+
+# Subset data for three time points
+subset_data_24 <- epi_virulence_data %>% filter(time == 24)
+subset_data_48 <- epi_virulence_data %>% filter(time == 48)
+subset_data_72 <- epi_virulence_data %>% filter(time == 72)
+
+# Calculate correlation coefficient between survival probability and epiphytic growth ability
+correlation_24 <- cor(subset_data_24$surv_prob, subset_data_24$mean_CFU)
+correlation_48 <- cor(subset_data_48$surv_prob, subset_data_48$mean_CFU)
+correlation_72 <- cor(subset_data_72$surv_prob, subset_data_72$mean_CFU)
+```
+
+# Plot it for different times
+
+```{r epi-virulence-plot}
+# Create scatter plot for 24 hours
+p_24 <- ggplot(subset_data_24, aes(x = mean_CFU, y = surv_prob, color = treatment)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "24 Hours",
+       x = "",  # Remove x-axis label
+       y = "Survival Probability",
+       caption = paste("Correlation Coefficient:", round(correlation_24, 2))) +
+  scale_color_manual(values = strain_colors) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_blank())  # Remove x-axis labels
+
+# Create scatter plot for 48 hours
+p_48 <- ggplot(subset_data_48, aes(x = mean_CFU, y = surv_prob, color = treatment)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "48 Hours",
+       x = "",  # Remove x-axis label
+       y = "",  # Remove y-axis label
+       caption = paste("Correlation Coefficient:", round(correlation_48, 2))) +
+  scale_color_manual(values = strain_colors) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_blank(), axis.title.y = element_blank())  # Remove x and y-axis labels
+
+# Create scatter plot for 72 hours
+p_72 <- ggplot(subset_data_72, aes(x = mean_CFU, y = surv_prob, color = treatment)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "72 Hours",
+       x = "",  # Remove x-axis label
+       y = "",  # Remove y-axis label
+       caption = paste("Correlation Coefficient:", round(correlation_72, 2))) +
+  scale_color_manual(values = strain_colors) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_blank(), axis.title.y = element_blank())  # Remove x and y-axis labels
+
+# Combine the plots
+grid.arrange(p_24, p_48, p_72, nrow = 1, 
+             top = "Epiphytic Growth Ability vs Virulence",
+             bottom = "Epiphytic Growth Ability (Mean CFUs per 10 Leaf Disks)")
+```
+
+------------------------------------------------------------------------
+
+# Session Information
+
+```{r session-info}
+devtools::session_info()
+```
