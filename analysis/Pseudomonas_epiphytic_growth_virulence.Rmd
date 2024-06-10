@@ -63,12 +63,6 @@ aphid_virulence_data <- read_csv("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/
 
 Note: *In order to help me with this analysis, I am using the following sites - [Survival Analysis in R](https://www.emilyzabor.com/tutorials/survival_analysis_in_r_tutorial.html) and [Hazard Ratio: Interpretation & Definition](https://statisticsbyjim.com/probability/hazard-ratio/).*
 
-## Subset Data
-
-```{r subset-data-cit7}
-cit7_data <- subset(aphid_virulence_data, treatment == "Cit7")
-```
-
 ## Caclulcate survival probabilities for each strain and create dataframe
 
 ```{r test-survival}
@@ -118,6 +112,56 @@ print(surv_probs)
 # write.csv(surv_probs, "survival_probabilities.csv", row.names = FALSE)
 ```
 
+### Plot Surival Dataframe at different times
+
+```{r surival-barplot}
+# subset data by time
+# Subset data for three time points
+surv_probs_24 <- surv_probs %>% filter(time == 24)
+surv_probs_48 <- surv_probs %>% filter(time == 48)
+surv_probs_72 <- surv_probs %>% filter(time == 72)
+
+surv_plot_24 <- ggplot(data = surv_probs_24, aes(x = treatment, y = surv_prob, color = treatment, fill = treatment)) +
+  geom_point() +
+  labs(title = "24 hours",
+       x = "-80 Strain #",
+       y = "Survival Probability") +
+  theme_minimal() +
+  scale_fill_manual(values = strain_colors) + 
+  scale_color_manual(values = strain_colors) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+surv_plot_48 <- ggplot(data = surv_probs_48, aes(x = treatment, y = surv_prob, color = treatment, fill = treatment)) +
+  geom_point() +
+  labs(title = "48 hours",
+       x = "-80 Strain #",
+       y = "Survival Probability") +
+  theme_minimal() +
+  scale_fill_manual(values = strain_colors) + 
+  scale_color_manual(values = strain_colors) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+surv_plot_72 <- ggplot(data = surv_probs_72, aes(x = treatment, y = surv_prob, color = treatment, fill = treatment)) +
+  geom_point() +
+  labs(title = "72 hours",
+       x = "-80 Strain #",
+       y = "Survival Probability") +
+  theme_minimal() +
+  scale_fill_manual(values = strain_colors) + 
+  scale_color_manual(values = strain_colors) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+# Combine the plots
+combined_virulence_plot <- grid.arrange(surv_plot_24, surv_plot_48, surv_plot_72, nrow = 1, 
+             top = "Survival Probability per Strain",
+             bottom = "-80 Strain #")
+
+combined_virulence_plot
+```
+
 ## Make Kaplan-Meier Plot
 
 ### Cohort Survival Curve
@@ -145,6 +189,9 @@ cleaned_data <- pseud_epi_growth_2024summer_R %>%
 # Convert CFU_per_10_leafdiscs to numeric, handling scientific notation
 cleaned_data$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", cleaned_data$CFU_per_10_leafdiscs))
 
+# Subset data to remove unfinished strains
+cleaned_data <- cleaned_data %>%
+  filter(!strain %in% c("205", "pisi", "215"))
 
 # Calculate mean and variance for each strain
 strain_stats <- cleaned_data %>%
@@ -184,6 +231,10 @@ strain_stats <- strain_stats %>% rename(treatment = strain)
 
 # Combine strain_stats and surv_probs using left_join
 epi_virulence_data <- left_join(strain_stats, surv_probs, by = "treatment")
+
+# Subset data to remove unfinished strains
+epi_virulence_data <- epi_virulence_data %>%
+  filter(!treatment %in% c("205", "pisi", "215"))
 
 # Print the combined data
 print(epi_virulence_data)
@@ -239,9 +290,11 @@ p_72 <- ggplot(subset_data_72, aes(x = mean_CFU, y = surv_prob, color = treatmen
   theme(legend.position = "none", axis.text.x = element_blank(), axis.title.y = element_blank())  # Remove x and y-axis labels
 
 # Combine the plots
-grid.arrange(p_24, p_48, p_72, nrow = 1, 
+combined_epi_virulence_plot <- grid.arrange(p_24, p_48, p_72, nrow = 1, 
              top = "Epiphytic Growth Ability vs Virulence",
              bottom = "Epiphytic Growth Ability (Mean CFUs per 10 Leaf Disks)")
+
+combined_epi_virulence_plot
 ```
 
 ------------------------------------------------------------------------
