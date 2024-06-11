@@ -153,41 +153,24 @@ survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>%
 
 ```{r mean-epi-growth}
 # Replace NA with a lower value or remove them for visualization
-# For this example, I'll remove rows with NA in CFU_per_10_leafdiscs
-cleaned_data <- pseud_epi_growth_2024summer_R %>% 
+# Remove rows with NA in CFU_per_10_leafdiscs
+epi_growth_clean <- pseud_epi_growth_2024summer_R %>% 
   filter(!is.na(CFU_per_10_leafdiscs))
 
 # Convert CFU_per_10_leafdiscs to numeric, handling scientific notation
-cleaned_data$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", cleaned_data$CFU_per_10_leafdiscs))
+epi_growth_clean$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", epi_growth_clean$CFU_per_10_leafdiscs))
 
-# Subset data to remove unfinished strains
-cleaned_data <- cleaned_data %>%
-  filter(!strain %in% c("205", "pisi", "215"))
-
-# Calculate mean and variance for each strain
-strain_stats <- cleaned_data %>%
-  group_by(strain) %>%
-  summarise(
-    mean_CFU = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
-    sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE)
-  )
-
-# Print the calculated statistics
-print(strain_stats)
-```
-
-## Plot Epiphytic Growth
-
-```{r epi-growth}
-# Step 1: Extract the letter part from the 'plant_rep' column
-cleaned_data <- cleaned_data %>%
+# Subset data to remove unfinished strains and extract the letter part from the 'plant_rep' column
+epi_growth_clean <- epi_growth_clean %>%
+  filter(!strain %in% c("205", "pisi", "215")) %>%
   mutate(plant_rep_letter = substr(plant_rep, 1, 1))
 
-# Step 2: Calculate the mean CFU per strain for each plant rep letter and retain the specified columns
-aggregated_data <- cleaned_data %>%
+# Calculate the mean and SD CFU per strain for each plant rep letter and retain the specified columns
+epi_growth_mean_per_rep <- epi_growth_clean %>%
   group_by(strain, plant_rep_letter) %>%
   summarise(
     mean_CFU_per_10_leafdiscs = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
+    sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE),
     sample = first(sample),
     person = first(person),
     block = first(block),
@@ -196,8 +179,27 @@ aggregated_data <- cleaned_data %>%
     .groups = 'drop'
   )
 
-# Step 3: Create the plot using the aggregated data
-epi_growth_strain <- ggplot(data = aggregated_data, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = strain, fill = strain)) +
+# Calculate the mean and SD CFU per strain for each plant rep letter and retain the specified columns
+epi_growth_mean_per_strain <- epi_growth_clean %>%
+  group_by(strain) %>%
+  summarise(
+    mean_CFU_per_10_leafdiscs = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
+    sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE),
+    sample = first(sample),
+    person = first(person),
+    block = first(block),
+    species = first(species),
+    plant_rep = first(plant_rep),
+    .groups = 'drop'
+  )
+
+epi_growth_mean_per_strain
+```
+
+## Plot Epiphytic Growth
+
+```{r epi-growth}
+epi_growth_strain <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = strain, fill = strain)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   labs(title = "CFU per 10 Leaf Discs Across Samples",
@@ -212,7 +214,7 @@ epi_growth_strain <- ggplot(data = aggregated_data, aes(x = strain, y = mean_CFU
 
 epi_growth_strain
 
-epi_growth_species <- ggplot(data = aggregated_data, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = species, fill = species)) +
+epi_growth_species <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = species, fill = species)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   labs(title = "CFU per 10 Leaf Discs Across Samples",
@@ -233,10 +235,10 @@ epi_growth_species
 ```{r combine-epi-virulence}
 # Assuming strain_stats has a column 'strain' and surv_probs has a column 'treatment'
 # Rename columns if necessary to match the key for joining
-strain_stats <- strain_stats %>% rename(treatment = strain)
+epi_growth_mean_per_strain <- epi_growth_mean_per_strain %>% rename(treatment = strain)
 
 # Combine strain_stats and surv_probs using left_join
-epi_virulence_data <- left_join(strain_stats, surv_probs, by = "treatment")
+epi_virulence_data <- left_join(epi_growth_mean_per_strain, surv_probs, by = "treatment")
 
 # Subset data to remove unfinished strains
 epi_virulence_data <- epi_virulence_data %>%
@@ -248,24 +250,38 @@ print(epi_virulence_data)
 subset_data_72 <- epi_virulence_data %>% filter(time == 72)
 
 # Calculate correlation coefficient between survival probability and epiphytic growth ability
-correlation_72 <- cor(subset_data_72$surv_prob, subset_data_72$mean_CFU)
+correlation_72 <- cor(subset_data_72$surv_prob, subset_data_72$mean_CFU_per_10_leafdiscs, method = "pearson")
 ```
 
 # Plot it for different times
 
 ```{r epi-virulence-plot}
 # Create scatter plot for 72 hours
-epi_virulence_plot_strains <- ggplot(subset_data_72, aes(x = mean_CFU, y = 1-surv_prob, color = treatment)) +
+epi_virulence_plot_strains <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob, color = treatment)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   labs(title = "72 Hours",
-       x = "Mean CFU per 10 Leaf Discs",
-       y = "Aphid Mortality at 72 Hours",  
-       caption = paste("Correlation Coefficient:", round(correlation_72, 2))) +
+       x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
+       y = "Aphid Mortality at 72 Hours (%)",  
+       caption = paste("Pearson's Correlation Coefficient:", round(correlation_72, 2))) +
+  scale_x_log10() +  # Apply log transformation to y-axis
   scale_color_manual(values = strain_colors) +
   theme_minimal()
 
 epi_virulence_plot_strains
+
+epi_virulence_plot_species <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob, color = species)) +
+  geom_point() +
+  #geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "72 Hours",
+       x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
+       y = "Aphid Mortality at 72 Hours (%)",  
+       caption = paste("Pearson's Correlation Coefficient:", round(correlation_72, 2))) +
+  scale_color_manual(values = species_colors) +
+  scale_x_log10() +  # Apply log transformation to y-axis
+  theme_minimal()
+
+epi_virulence_plot_species
 ```
 
 ------------------------------------------------------------------------

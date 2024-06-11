@@ -26,6 +26,12 @@ Obtain data on epiphytic growth ability of different *Pseudomonas* strains to co
 
 # Progress
 
+```{r load-data}
+pseud_epi_growth_2024summer_R <- read_excel("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/pseud_epi_growth_2024summer_R.xlsx")
+
+aphid_virulence_data <- read_csv("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/others_data/virulence_new_all.csv")
+```
+
 ## Strains (from virulence assay)
 
 | Strain  | Person | Reps |
