@@ -26,7 +26,7 @@ knitr::opts_chunk$set(echo = TRUE, tidy.opts = list, tidy = TRUE, fig.align = "c
 # Load Libraries
 
 ```{r load-packages}
-pacman::p_load(ggplot2, readxl, RColorBrewer, paletteer, viridis, wesanderson, ggbeeswarm, dplyr, tidyverse, devtools, cowplot, knitr, survival, here, tibble, lubridate, formatR, gridExtra, ggsurvfit, gtsummary, tidycmprsk, install = FALSE)
+pacman::p_load(ggplot2, readxl, RColorBrewer, paletteer, viridis, wesanderson, ggbeeswarm, dplyr, tidyverse, devtools, emmeans, cowplot, knitr, survival, here, tibble, survminer, lubridate, formatR, gridExtra, ggsurvfit, gtsummary, tidycmprsk, install = FALSE)
 
 # Load strain colors
 # Define your strains
@@ -37,10 +37,10 @@ strains <- c(
 )
 
 # Generate colors using the "grDevices::Set 2" palette
-set2_colors <- as.character(paletteer_c("grDevices::Dark 3", length(strains) - 1))
+set2_colors <- as.character(paletteer_c("grDevices::Dark 3", length(strains)))
 
 # Create a named vector for strain colors, with "Control" as black
-strain_colors <- setNames(c(set2_colors, "black"), strains)
+strain_colors <- setNames(c(set2_colors), strains)
 
 species_colors <- c(
   "P. fluorescens" = "dodgerblue2",
@@ -116,14 +116,24 @@ surv_probs_72 <- surv_probs %>% filter(time == 72)
 # write.csv(surv_probs, "survival_probabilities.csv", row.names = FALSE)
 ```
 
+### Post-hoc test for survival
+
+```{r post-hoc}
+# Perform pairwise log-rank tests between treatment groups and the control group
+pairwise_tests <- pairwise_survdiff(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
+
+# Print the pairwise tests
+print(pairwise_tests)
+```
+
 ### Plot Surival Dataframe at different times
 
 ```{r surival-barplot}
-surv_plot_72 <- ggplot(data = surv_probs_72, aes(x = treatment, y = surv_prob, color = treatment, fill = treatment)) +
+surv_plot_72 <- ggplot(data = surv_probs_72, aes(x = treatment, y = (1-surv_prob), color = treatment, fill = treatment)) +
   geom_point() +
   labs(title = "72 hours",
        x = "-80 Strain #",
-       y = "Survival Probability") +
+       y = "Aphid Mortality at 72 Hours (%)") +
   theme_minimal() +
   scale_fill_manual(values = strain_colors) + 
   scale_color_manual(values = strain_colors) +
