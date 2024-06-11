@@ -26,25 +26,26 @@ knitr::opts_chunk$set(echo = TRUE, tidy.opts = list, tidy = TRUE, fig.align = "c
 # Load Libraries
 
 ```{r load-packages}
-pacman::p_load(ggplot2, readxl, ggbeeswarm, dplyr, tidyverse, devtools, cowplot, knitr, survival, here, tibble, lubridate, formatR, gridExtra, ggsurvfit, gtsummary, tidycmprsk, install = FALSE)
+pacman::p_load(ggplot2, readxl, RColorBrewer, paletteer, viridis, wesanderson, ggbeeswarm, dplyr, tidyverse, devtools, cowplot, knitr, survival, here, tibble, lubridate, formatR, gridExtra, ggsurvfit, gtsummary, tidycmprsk, install = FALSE)
 
 # Load strain colors
-# green = syringae, blue = fluorescencs, brown = parallactic
-strain_colors <- c(
-  "194" = "sienna",
-  "200" = "dodgerblue",
-  "204" = "dodgerblue2",
-  "205" = "dodgerblue3",
-  "215" = "springgreen3",
-  "216" = "dodgerblue4",
-  "220" = "sienna4",
-  "221" = "deepskyblue",
-  "227" = "deepskyblue2",
-  "228" = "deepskyblue3",
-  "B728a" = "springgreen4",
-  "Cit7" = "springgreen2",
-  "Control" = "black",
-  "pisi" = "springgreen1")
+# Define your strains
+strains <- c(
+  "194", "200", "204", "205", "215", 
+  "216", "220", "221", "227", "228", 
+  "B728a", "Cit7", "Control", "pisi"
+)
+
+# Generate colors using the "grDevices::Set 2" palette
+set2_colors <- as.character(paletteer_c("grDevices::Dark 3", length(strains) - 1))
+
+# Create a named vector for strain colors, with "Control" as black
+strain_colors <- setNames(c(set2_colors, "black"), strains)
+
+species_colors <- c(
+  "P. fluorescens" = "dodgerblue2",
+  "P. syringae" = "springgreen3",
+  "P. paralactis" = "sienna4")
 ```
 
 ```{r load-data}
@@ -108,6 +109,9 @@ surv_probs$treatment <- gsub("treatment=", "", surv_probs$treatment)
 # Print the data frame
 print(surv_probs)
 
+# subset data by time
+surv_probs_72 <- surv_probs %>% filter(time == 72)
+
 # If you need to save it to a file, you can use the following command
 # write.csv(surv_probs, "survival_probabilities.csv", row.names = FALSE)
 ```
@@ -115,34 +119,6 @@ print(surv_probs)
 ### Plot Surival Dataframe at different times
 
 ```{r surival-barplot}
-# subset data by time
-# Subset data for three time points
-surv_probs_24 <- surv_probs %>% filter(time == 24)
-surv_probs_48 <- surv_probs %>% filter(time == 48)
-surv_probs_72 <- surv_probs %>% filter(time == 72)
-
-surv_plot_24 <- ggplot(data = surv_probs_24, aes(x = treatment, y = surv_prob, color = treatment, fill = treatment)) +
-  geom_point() +
-  labs(title = "24 hours",
-       x = "-80 Strain #",
-       y = "Survival Probability") +
-  theme_minimal() +
-  scale_fill_manual(values = strain_colors) + 
-  scale_color_manual(values = strain_colors) +
-  theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
-
-surv_plot_48 <- ggplot(data = surv_probs_48, aes(x = treatment, y = surv_prob, color = treatment, fill = treatment)) +
-  geom_point() +
-  labs(title = "48 hours",
-       x = "-80 Strain #",
-       y = "Survival Probability") +
-  theme_minimal() +
-  scale_fill_manual(values = strain_colors) + 
-  scale_color_manual(values = strain_colors) +
-  theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
-
 surv_plot_72 <- ggplot(data = surv_probs_72, aes(x = treatment, y = surv_prob, color = treatment, fill = treatment)) +
   geom_point() +
   labs(title = "72 hours",
@@ -154,12 +130,7 @@ surv_plot_72 <- ggplot(data = surv_probs_72, aes(x = treatment, y = surv_prob, c
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
 
-# Combine the plots
-combined_virulence_plot <- grid.arrange(surv_plot_24, surv_plot_48, surv_plot_72, nrow = 1, 
-             top = "Survival Probability per Strain",
-             bottom = "-80 Strain #")
-
-combined_virulence_plot
+surv_plot_72
 ```
 
 ## Make Kaplan-Meier Plot
@@ -208,8 +179,25 @@ print(strain_stats)
 ## Plot Epiphytic Growth
 
 ```{r epi-growth}
-# Create the box plot
-ggplot(data = cleaned_data, aes(x = strain, y = CFU_per_10_leafdiscs, color = strain, fill = strain)) +
+# Step 1: Extract the letter part from the 'plant_rep' column
+cleaned_data <- cleaned_data %>%
+  mutate(plant_rep_letter = substr(plant_rep, 1, 1))
+
+# Step 2: Calculate the mean CFU per strain for each plant rep letter and retain the specified columns
+aggregated_data <- cleaned_data %>%
+  group_by(strain, plant_rep_letter) %>%
+  summarise(
+    mean_CFU_per_10_leafdiscs = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
+    sample = first(sample),
+    person = first(person),
+    block = first(block),
+    species = first(species),
+    plant_rep = first(plant_rep),
+    .groups = 'drop'
+  )
+
+# Step 3: Create the plot using the aggregated data
+epi_growth_strain <- ggplot(data = aggregated_data, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = strain, fill = strain)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   labs(title = "CFU per 10 Leaf Discs Across Samples",
@@ -218,8 +206,26 @@ ggplot(data = cleaned_data, aes(x = strain, y = CFU_per_10_leafdiscs, color = st
   theme_minimal() +
   scale_fill_manual(values = strain_colors) + 
   scale_color_manual(values = strain_colors) +
+  scale_y_log10() +  # Apply log transformation to y-axis
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+epi_growth_strain
+
+epi_growth_species <- ggplot(data = aggregated_data, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = species, fill = species)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.3) +
+  geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
+  labs(title = "CFU per 10 Leaf Discs Across Samples",
+       x = "-80 Strain #",
+       y = "CFU per 10 Leaf Discs") +
+  theme_minimal() +
+  scale_fill_manual(values = species_colors) + 
+  scale_color_manual(values = species_colors) +
+  scale_y_log10() +  # Apply log transformation to y-axis
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
+
+epi_growth_species
 ```
 
 # Combine epiphytic and virulence data
@@ -239,62 +245,27 @@ epi_virulence_data <- epi_virulence_data %>%
 # Print the combined data
 print(epi_virulence_data)
 
-# Subset data for three time points
-subset_data_24 <- epi_virulence_data %>% filter(time == 24)
-subset_data_48 <- epi_virulence_data %>% filter(time == 48)
 subset_data_72 <- epi_virulence_data %>% filter(time == 72)
 
 # Calculate correlation coefficient between survival probability and epiphytic growth ability
-correlation_24 <- cor(subset_data_24$surv_prob, subset_data_24$mean_CFU)
-correlation_48 <- cor(subset_data_48$surv_prob, subset_data_48$mean_CFU)
 correlation_72 <- cor(subset_data_72$surv_prob, subset_data_72$mean_CFU)
 ```
 
 # Plot it for different times
 
 ```{r epi-virulence-plot}
-# Create scatter plot for 24 hours
-p_24 <- ggplot(subset_data_24, aes(x = mean_CFU, y = surv_prob, color = treatment)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "24 Hours",
-       x = "",  # Remove x-axis label
-       y = "Survival Probability",
-       caption = paste("Correlation Coefficient:", round(correlation_24, 2))) +
-  scale_color_manual(values = strain_colors) +
-  theme_minimal() +
-  theme(legend.position = "none", axis.text.x = element_blank())  # Remove x-axis labels
-
-# Create scatter plot for 48 hours
-p_48 <- ggplot(subset_data_48, aes(x = mean_CFU, y = surv_prob, color = treatment)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "48 Hours",
-       x = "",  # Remove x-axis label
-       y = "",  # Remove y-axis label
-       caption = paste("Correlation Coefficient:", round(correlation_48, 2))) +
-  scale_color_manual(values = strain_colors) +
-  theme_minimal() +
-  theme(legend.position = "none", axis.text.x = element_blank(), axis.title.y = element_blank())  # Remove x and y-axis labels
-
 # Create scatter plot for 72 hours
-p_72 <- ggplot(subset_data_72, aes(x = mean_CFU, y = surv_prob, color = treatment)) +
+epi_virulence_plot_strains <- ggplot(subset_data_72, aes(x = mean_CFU, y = 1-surv_prob, color = treatment)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   labs(title = "72 Hours",
-       x = "",  # Remove x-axis label
-       y = "",  # Remove y-axis label
+       x = "Mean CFU per 10 Leaf Discs",
+       y = "Aphid Mortality at 72 Hours",  
        caption = paste("Correlation Coefficient:", round(correlation_72, 2))) +
   scale_color_manual(values = strain_colors) +
-  theme_minimal() +
-  theme(legend.position = "none", axis.text.x = element_blank(), axis.title.y = element_blank())  # Remove x and y-axis labels
+  theme_minimal()
 
-# Combine the plots
-combined_epi_virulence_plot <- grid.arrange(p_24, p_48, p_72, nrow = 1, 
-             top = "Epiphytic Growth Ability vs Virulence",
-             bottom = "Epiphytic Growth Ability (Mean CFUs per 10 Leaf Disks)")
-
-combined_epi_virulence_plot
+epi_virulence_plot_strains
 ```
 
 ------------------------------------------------------------------------
