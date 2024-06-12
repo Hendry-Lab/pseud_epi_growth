@@ -49,9 +49,9 @@ species_colors <- c(
 ```
 
 ```{r load-data}
-pseud_epi_growth_2024summer_R <- read_excel("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/pseud_epi_growth_2024summer_R.xlsx")
+pseud_epi_growth_2024summer_R <- read_excel("data/pseud_epi_growth_2024summer_R.xlsx")
 
-aphid_virulence_data <- read_csv("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/others_data/virulence_new_all.csv")
+aphid_virulence_data <- read_csv("data/virulence_new_all.csv")
 ```
 
 # Goals
