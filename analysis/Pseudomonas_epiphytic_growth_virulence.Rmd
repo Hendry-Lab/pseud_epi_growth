@@ -172,7 +172,7 @@ epi_growth_clean$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", epi_growth_cle
 
 # Subset data to remove unfinished strains and extract the letter part from the 'plant_rep' column
 epi_growth_clean <- epi_growth_clean %>%
-  filter(!strain %in% c("205", "pisi", "215")) %>%
+  filter(!strain %in% c("pisi", "215")) %>%
   mutate(plant_rep_letter = substr(plant_rep, 1, 1))
 
 # Calculate the mean and SD CFU per strain for each plant rep letter and retain the specified columns
@@ -249,10 +249,6 @@ epi_growth_mean_per_strain <- epi_growth_mean_per_strain %>% rename(treatment = 
 
 # Combine strain_stats and surv_probs using left_join
 epi_virulence_data <- left_join(epi_growth_mean_per_strain, surv_probs, by = "treatment")
-
-# Subset data to remove unfinished strains
-epi_virulence_data <- epi_virulence_data %>%
-  filter(!treatment %in% c("205", "pisi", "215"))
 
 # Print the combined data
 print(epi_virulence_data)
