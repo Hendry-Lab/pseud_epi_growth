@@ -130,7 +130,7 @@ print(pairwise_tests)
 
 ```{r surival-barplot}
 surv_plot_72 <- ggplot(data = surv_probs_72, aes(x = treatment, y = (1-surv_prob), color = treatment, fill = treatment)) +
-  geom_point() +
+  geom_col() +
   labs(title = "72 hours",
        x = "-80 Strain #",
        y = "Aphid Mortality at 72 Hours (%)") +
