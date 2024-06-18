@@ -172,7 +172,7 @@ epi_growth_clean$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", epi_growth_cle
 
 # Subset data to remove unfinished strains and extract the letter part from the 'plant_rep' column
 epi_growth_clean <- epi_growth_clean %>%
-  filter(!strain %in% c("pisi", "215")) %>%
+  filter(!strain %in% c("pisi")) %>%
   mutate(plant_rep_letter = substr(plant_rep, 1, 1))
 
 # Calculate the mean and SD CFU per strain for each plant rep letter and retain the specified columns
@@ -240,6 +240,16 @@ epi_growth_species <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y =
 epi_growth_species
 ```
 
+# Epiphutic growth stats
+
+```{r epi-growth-stats}
+epi_growth_mod = lm(mean_CFU_per_10_leafdiscs ~ strain, data = epi_growth_mean_per_rep)
+
+emmeans(epi_growth_mod, pairwise ~ strain)
+
+hist(resid(epi_growth_mod))
+```
+
 # Combine epiphytic and virulence data
 
 ```{r combine-epi-virulence}
@@ -256,16 +266,16 @@ print(epi_virulence_data)
 subset_data_72 <- epi_virulence_data %>% filter(time == 72)
 
 # Calculate correlation coefficient between survival probability and epiphytic growth ability
-correlation_72 <- cor(subset_data_72$surv_prob, subset_data_72$mean_CFU_per_10_leafdiscs, method = "pearson")
+correlation_72 <- -1*cor(subset_data_72$surv_prob, subset_data_72$mean_CFU_per_10_leafdiscs, method = "pearson")
 ```
 
 # Plot it for different times
 
 ```{r epi-virulence-plot}
 # Create scatter plot for 72 hours
-epi_virulence_plot_strains <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_leafdiscs, y = (1-surv_prob), color = treatment)) +
-  geom_point() +
-  geom_smooth(data = subset_data_72, method = "lm", se = FALSE) +
+epi_virulence_plot_strains <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob)) +
+  geom_point(aes(color = treatment)) +
+  geom_smooth(method = "lm", se = FALSE, color = "chocolate4", linewidth = 0.5) +
   labs(title = "72 Hours",
        x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
        y = "Aphid Mortality at 72 Hours (%)",  
@@ -276,9 +286,9 @@ epi_virulence_plot_strains <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_lea
 
 epi_virulence_plot_strains
 
-epi_virulence_plot_species <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_leafdiscs, y = (1-surv_prob), color = species)) +
-  geom_point() +
-  #geom_smooth(method = "lm", se = FALSE) +
+epi_virulence_plot_species <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_leafdiscs, y = (1-surv_prob))) +
+  geom_point(aes(color = species)) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linewidth = 0.5) +
   labs(title = "72 Hours",
        x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
        y = "Aphid Mortality at 72 Hours (%)",  
