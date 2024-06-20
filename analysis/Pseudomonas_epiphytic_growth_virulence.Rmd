@@ -214,7 +214,7 @@ epi_growth_strain <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y = 
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   labs(title = "CFU per 10 Leaf Discs Across Samples",
        x = "-80 Strain #",
-       y = "CFU per 10 Leaf Discs") +
+       y = "CFU per 10 Leaf Discs (Log10 Transformed)") +
   theme_minimal() +
   scale_fill_manual(values = strain_colors) + 
   scale_color_manual(values = strain_colors) +
@@ -229,7 +229,7 @@ epi_growth_species <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y =
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   labs(title = "CFU per 10 Leaf Discs Across Samples",
        x = "-80 Strain #",
-       y = "CFU per 10 Leaf Discs") +
+       y = "CFU per 10 Leaf Discs (Log10 Transformed)") +
   theme_minimal() +
   scale_fill_manual(values = species_colors) + 
   scale_color_manual(values = species_colors) +
