@@ -3,6 +3,7 @@ title: "Pseudomonas Epiphytic Growth and Virulence Analysis"
 date: "2024 Summer"
 output:
   pdf_document:
+    latex_engine: xelatex
     toc: true
   html_document:
     css: css/tufte.css
@@ -32,41 +33,58 @@ pacman::p_load(ggplot2, readxl, RColorBrewer, paletteer, viridis, wesanderson, g
 # Load Data
 
 ```{r load-data}
-pseud_epi_growth_2024summer_R <- read_excel("data/pseud_epi_growth_2024summer_R.xlsx")
-
 # Define the desired order of the treatments
-desired_order <- c("194", "200", "204", "205", "215", "216", "220", "221", "227", "228", "B728a", "Cit7", "pisi", "Control")
+strains_order <- c("194", "200", "204", "205", "215", "216", "220", "221", "227", "228", "B728a", "Cit7", "pisi", "Control")
 
-# Convert the treatment variable to a factor with the specified order
-pseud_epi_growth_2024summer_R$strain <- factor(pseud_epi_growth_2024summer_R$strain, levels = desired_order)
+strains_df <- read_excel("data/strains_R.xlsx")
+
+epi_growth_data <- read_excel("data/pseud_epi_growth_2024summer_R.xlsx")
+
+# Convert the strain variable to a factor with the specified order
+epi_growth_data$strain <- factor(epi_growth_data$strain, levels = strains_order)
 
 aphid_virulence_data <- read_csv("data/virulence_new_all.csv")
 
 # Convert the treatment variable to a factor with the specified order
-aphid_virulence_data$treatment <- factor(aphid_virulence_data$treatment, levels = desired_order)
+aphid_virulence_data$treatment <- factor(aphid_virulence_data$treatment, levels = strains_order)
+
+# Join the strains dataframe to virulence
+aphid_virulence_data <- left_join(aphid_virulence_data, strains_df, by = "treatment")
+
+aphid_virulence_data <- aphid_virulence_data %>%
+  mutate(species = replace_na(species, "Control"))
 ```
 
 # Load colors
 
 ```{r colors}
-# Define the desired order of the treatments
-strains <- c("194", "200", "204", "205", "215", "216", "220", "221", "227", "228", "B728a", "Cit7", "pisi", "Control")
-
-# Convert the strain variable to a factor with the specified order
-pseud_epi_growth_2024summer_R$strain <- factor(pseud_epi_growth_2024summer_R$strain, levels = strains)
-
-
 # Extract the default ggplot colors
-default_colors <- scales::hue_pal()(length(strains) - 1)
+default_colors <- scales::hue_pal()(length(strains_order) - 1)
 
 # Create a named vector for strain colors, ensuring "Control" is black
-strain_colors <- setNames(c(default_colors, "black"), strains)
+strain_colors <- setNames(c(default_colors, "black"), strains_order)
 
 # Load species colors
 species_colors <- c(
   "P. fluorescens" = "dodgerblue2",
   "P. syringae" = "springgreen3",
-  "P. paralactis" = "sienna4")
+  "P. paralactis" = "sienna4",
+  "Control" = "black")
+
+species_colors_manual <- c("194" = "sienna4", 
+                           "200" = "dodgerblue2", 
+                           "204" = "dodgerblue2", 
+                           "205" = "dodgerblue2", 
+                           "215" = "springgreen3", 
+                           "216" = "dodgerblue2", 
+                           "220" = "sienna4", 
+                           "221" = "dodgerblue2", 
+                           "227" = "dodgerblue2", 
+                           "228" = "dodgerblue2", 
+                           "B728a" = "springgreen3", 
+                           "Cit7" = "springgreen3", 
+                           "pisi" = "springgreen3", 
+                           "Control" = "black")
 ```
 
 # Goals
@@ -81,18 +99,30 @@ Note: *In order to help me with this analysis, I am using the following sites - 
 
 ## Caclulcate survival probabilities for each strain and create dataframe
 
+### Survival model
+
+```{r survival-model}
+# Fit the survival model
+km_fit <- survfit(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
+```
+
+### Extract survival probability
 ```{r test-survival}
 # Fit the survival model
 km_fit <- survfit(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
 
 # Extract survival probabilities at specific time points
-time_points <- c(24, 48, 72)
+time_points <- c(72)
 km_summary <- summary(km_fit, times = time_points)
+
+# Calculate standard error (assuming fit includes the necessary information)
+std_error <- summary(km_fit, times = time_points)$std.err
 
 # Initialize empty lists to store the results
 times_list <- list()
 treatment_list <- list()
 surv_prob_list <- list()
+std_error_list <- list()
 
 # Loop over each treatment group and extract survival probabilities at specified time points
 for (i in 1:length(km_fit$strata)) {
@@ -103,10 +133,12 @@ for (i in 1:length(km_fit$strata)) {
       times_list <- c(times_list, t)
       treatment_list <- c(treatment_list, treatment_name)
       surv_prob_list <- c(surv_prob_list, km_summary$surv[idx])
+      std_error_list <- c(std_error_list, km_summary$std.err[idx])
     } else {
       times_list <- c(times_list, t)
       treatment_list <- c(treatment_list, treatment_name)
       surv_prob_list <- c(surv_prob_list, NA)
+      std_error_list <- c(std_error_list, NA)
     }
   }
 }
@@ -115,23 +147,21 @@ for (i in 1:length(km_fit$strata)) {
 surv_probs <- data.frame(
   time = unlist(times_list),
   treatment = unlist(treatment_list),
-  surv_prob = unlist(surv_prob_list)
+  surv_prob = unlist(surv_prob_list),
+  std_error_data = unlist(std_error_list)
 )
 
 # Replace "treatment=" with an empty string
 surv_probs$treatment <- gsub("treatment=", "", surv_probs$treatment)
 
+# Convert the treatment variable to a factor with the specified order
+surv_probs$treatment <- factor(surv_probs$treatment, levels = strains_order)
+
+# Join the survival dataframe to strains
+surv_probs <- left_join(surv_probs, strains_df, by = "treatment")
+
 # Print the data frame
 print(surv_probs)
-
-# subset data by time
-surv_probs_72 <- surv_probs %>% filter(time == 72)
-
-# Convert the treatment variable to a factor with the specified order
-surv_probs_72$treatment <- factor(surv_probs_72$treatment, levels = desired_order)
-
-# If you need to save it to a file, you can use the following command
-# write.csv(surv_probs, "survival_probabilities.csv", row.names = FALSE)
 ```
 
 ### Post-hoc test for survival
@@ -147,18 +177,21 @@ print(pairwise_tests)
 ### Plot Surival Dataframe at different times
 
 ```{r surival-barplot}
-surv_plot_72 <- ggplot(data = surv_probs_72, aes(x = treatment, y = (1-surv_prob), color = treatment, fill = treatment)) +
+surv_plot <- ggplot(data = surv_probs, aes(x = treatment, y = (1-surv_prob), color = species, fill = species, alpha = 0.95)) +
   geom_col() +
+  geom_errorbar(aes(ymin = (1-surv_prob) - std_error_data, ymax = (1-surv_prob) + std_error_data), 
+                width = 0.3,  # Width of error bars
+                position = position_dodge(width = 0.9)) +  # Dodge bars slightly
   labs(title = "72 hours",
        x = "-80 Strain #",
        y = "Aphid Mortality at 72 Hours (%)") +
   theme_minimal() +
+  scale_fill_manual(values = species_colors) +
+  scale_color_manual(values = species_colors) +
   theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") +
-  scale_fill_manual(values = strain_colors) +
-  scale_color_manual(values = strain_colors)
+        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
 
-surv_plot_72
+surv_plot
 ```
 
 ## Make Kaplan-Meier Plot
@@ -166,14 +199,19 @@ surv_plot_72
 ### Cohort Survival Curve
 
 ```{r Kaplan-Meier}
-survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>% 
-  ggsurvfit() +
+# Plot the Kaplan-Meier survival curves
+survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>%
+  ggsurvfit(type = "survival") +
   labs(
     x = "Hours",
     y = "Overall survival probability"
   ) +
-  scale_fill_manual(values = strain_colors) +
-  scale_color_manual(values = strain_colors)
+  theme_minimal() +
+  scale_fill_manual(values = species_colors_manual) +
+  scale_color_manual(values = species_colors_manual) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "right")
 ```
 
 # Epiphytic Growth Analysis
@@ -183,7 +221,7 @@ survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>%
 ```{r mean-epi-growth}
 # Replace NA with a lower value or remove them for visualization
 # Remove rows with NA in CFU_per_10_leafdiscs
-epi_growth_clean <- pseud_epi_growth_2024summer_R %>% 
+epi_growth_clean <- epi_growth_data %>% 
   filter(!is.na(CFU_per_10_leafdiscs))
 
 # Convert CFU_per_10_leafdiscs to numeric, handling scientific notation
@@ -227,21 +265,23 @@ epi_growth_mean_per_strain
 ## Plot Epiphytic Growth
 
 ```{r epi-growth}
-epi_growth_strain <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = strain, fill = strain)) +
+epi_growth_species <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = species, fill = species)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   labs(title = "CFU per 10 Leaf Discs Across Samples",
        x = "-80 Strain #",
        y = "CFU per 10 Leaf Discs (Log10 Transformed)") +
   theme_minimal() +
+  scale_fill_manual(values = species_colors) +
+  scale_color_manual(values = species_colors) +
   scale_y_log10() +  # Apply log transformation to y-axis
   theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
 
-epi_growth_strain
+epi_growth_species
 ```
 
-# Epiphutic growth stats
+# Epiphytic growth stats
 
 ```{r epi-growth-stats}
 epi_growth_mod = lm(mean_CFU_per_10_leafdiscs ~ strain, data = epi_growth_mean_per_rep)
@@ -264,24 +304,24 @@ epi_virulence_data <- left_join(epi_growth_mean_per_strain, surv_probs, by = "tr
 # Print the combined data
 print(epi_virulence_data)
 
-subset_data_72 <- epi_virulence_data %>% filter(time == 72)
-
 # Calculate correlation coefficient between survival probability and epiphytic growth ability
-correlation_72 <- -1*cor(subset_data_72$surv_prob, subset_data_72$mean_CFU_per_10_leafdiscs, method = "pearson")
+correlation <- -1*cor(epi_virulence_data$surv_prob, epi_virulence_data$mean_CFU_per_10_leafdiscs, method = "pearson")
 ```
 
 # Plot epi virulence plot
 
 ```{r epi-virulence-plot}
 # Create scatter plot for 72 hours
-epi_virulence_plot_strains <- ggplot(subset_data_72, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob)) +
-  geom_point(aes(color = treatment, shape = species)) +
+epi_virulence_plot_strains <- ggplot(epi_virulence_data, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob)) +
+  geom_point(aes(color = species.y)) +
   geom_smooth(method = "lm", se = TRUE, color = "black", fill = "black", alpha = 0.15, linewidth = 0.5) +
   labs(title = "72 Hours",
        x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
        y = "Aphid Mortality at 72 Hours (%)",  
-       caption = paste("Pearson's Correlation Coefficient:", round(correlation_72, 2))) +
+       caption = paste("Pearson's Correlation Coefficient:", round(correlation, 2))) +
   scale_x_continuous(trans = "log10") +  # Apply log transformation to x-axis
+  scale_fill_manual(values = species_colors) +
+  scale_color_manual(values = species_colors) +
   theme_minimal()
 
 epi_virulence_plot_strains
