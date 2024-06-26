@@ -2,13 +2,13 @@
 title: "Pseudomonas Epiphytic Growth and Virulence Analysis"
 date: "2024 Summer"
 output:
-  pdf_document:
-    latex_engine: xelatex
-    toc: true
   html_document:
     css: css/tufte.css
     toc: true
     toc_float: true
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
   word_document:
     toc: true
     reference_docx: templates/wordstyletemplate.docx
