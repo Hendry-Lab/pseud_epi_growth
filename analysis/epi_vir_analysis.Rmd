@@ -21,7 +21,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, tidy.opts = list, tidy = TRUE, fig.align = "center", # Always relative to the document directory
                       fig.path = "../figures/", # Send any figures to this folder
                       dev = "png",  # Export figures as PNG
-                      dpi = 300)  # Set the resolution to 300 dots per inch (dpi)
+                      dpi = 350)  # Set the resolution to 300 dots per inch (dpi)
 ```
 
 # Load Libraries
