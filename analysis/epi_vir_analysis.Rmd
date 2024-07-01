@@ -169,10 +169,16 @@ print(surv_probs)
 
 ```{r post-hoc}
 # Perform pairwise log-rank tests between treatment groups and the control group
-pairwise_tests <- pairwise_survdiff(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
+pairwise_tests_treatment <- pairwise_survdiff(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
 
 # Print the pairwise tests
-print(pairwise_tests)
+print(pairwise_tests_treatment)
+
+# Perform pairwise log-rank tests between species_complex groups and the control group
+pairwise_tests_species <- pairwise_survdiff(Surv(time, censored) ~ species_complex, data = aphid_virulence_data)
+
+# Print the pairwise tests
+print(pairwise_tests_species)
 ```
 
 ### Plot Surival Dataframe at different times
@@ -200,8 +206,8 @@ surv_plot
 ### Cohort Survival Curve
 
 ```{r Kaplan-Meier}
-# Plot the Kaplan-Meier survival curves
-survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>%
+# Plot the Kaplan-Meier survival curves by treatment
+surv_curv_treatment <- survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>%
   ggsurvfit(type = "survival") +
   labs(
     x = "Hours",
@@ -213,6 +219,24 @@ survfit2(Surv(time, censored) ~ treatment, data = aphid_virulence_data) %>%
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1), 
         legend.position = "right")
+
+# Plot the Kaplan-Meier survival curves by species complex
+surv_curv_species <- survfit2(Surv(time, censored) ~ species_complex, data = aphid_virulence_data) %>%
+  ggsurvfit(type = "survival") +
+  labs(
+    x = "Hours",
+    y = "Overall survival probability"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = species_colors) +
+  scale_color_manual(values = species_colors) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "right")
+
+#show plots
+surv_curv_treatment
+surv_curv_species
 ```
 
 # Epiphytic Growth Analysis
@@ -268,29 +292,60 @@ epi_growth_mean_per_strain
 ## Plot Epiphytic Growth
 
 ```{r epi-growth}
-epi_growth_species <- ggplot(data = epi_growth_mean_per_rep, aes(x = treatment, y = mean_CFU_per_10_leafdiscs, color = species_complex, fill = species_complex)) +
+# plot by treatment
+epi_growth_treatment <- ggplot(data = epi_growth_mean_per_rep,
+                               aes(x = treatment, 
+                                   y = mean_CFU_per_10_leafdiscs,
+                                   color = species_complex,
+                                   fill = species_complex)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
-  labs(title = "CFU per 10 Leaf Discs Across Samples", x = "-80 Strain #", y = "CFU per 10 Leaf Discs (Log10 Transformed)") +
   theme_minimal() +
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
-  scale_y_log10() +  # Apply log transformation to y-axis
-  scale_y_continuous(limits = c(10^2, 10^5.5) +
+  scale_y_log10() +
   theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
 
+# plot by species complex
+epi_growth_species <- ggplot(data = epi_growth_mean_per_rep,
+                               aes(x = species_complex, 
+                                   y = mean_CFU_per_10_leafdiscs,
+                                   color = species_complex,
+                                   fill = species_complex)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.3) +
+  geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
+  theme_minimal() +
+  scale_fill_manual(values = species_colors) +
+  scale_color_manual(values = species_colors) +
+  scale_y_log10() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+
+# show plots
+epi_growth_treatment
 epi_growth_species
 ```
 
 # Epiphytic growth stats
 
 ```{r epi-growth-stats}
-epi_growth_mod = lm(mean_CFU_per_10_leafdiscs ~ treatment, data = epi_growth_mean_per_rep)
+# stats per treatment
+epi_growth_mod_treatment = lm(mean_CFU_per_10_leafdiscs ~ treatment, data = epi_growth_mean_per_rep)
 
-emmeans(epi_growth_mod, pairwise ~ treatment)
+emmeans(epi_growth_mod_treatment, pairwise ~ treatment)
 
-hist(resid(epi_growth_mod))
+hist(resid(epi_growth_mod_treatment))
+
+# stats per species
+epi_growth_mod_species = lm(mean_CFU_per_10_leafdiscs ~ species_complex, data = epi_growth_mean_per_rep)
+
+emmeans(epi_growth_mod_species, pairwise ~ species_complex)
+
+hist(resid(epi_growth_mod_species))
 ```
 
 # Combine epiphytic and virulence data
