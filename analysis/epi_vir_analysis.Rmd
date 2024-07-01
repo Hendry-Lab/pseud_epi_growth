@@ -2,13 +2,13 @@
 title: "Pseudomonas Epiphytic Growth and Virulence Analysis"
 date: "2024 Summer"
 output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
   html_document:
     css: css/tufte.css
     toc: true
     toc_float: true
-  pdf_document:
-    latex_engine: xelatex
-    toc: true
   word_document:
     toc: true
     reference_docx: templates/wordstyletemplate.docx
@@ -41,8 +41,12 @@ strains_df <- read_excel("data/strains_R.xlsx")
 epi_growth_data <- read_excel("data/pseud_epi_growth_2024summer_R.xlsx")
 
 # Convert the strain variable to a factor with the specified order
-epi_growth_data$strain <- factor(epi_growth_data$strain, levels = strains_order)
+epi_growth_data$treatment <- factor(epi_growth_data$treatment, levels = strains_order)
 
+# Join the strains dataframe to epi growth
+epi_growth_data <- left_join(epi_growth_data, strains_df, by = "treatment")
+
+# Load virulence data
 aphid_virulence_data <- read_csv("data/virulence_new_all.csv")
 
 # Convert the treatment variable to a factor with the specified order
@@ -50,9 +54,6 @@ aphid_virulence_data$treatment <- factor(aphid_virulence_data$treatment, levels 
 
 # Join the strains dataframe to virulence
 aphid_virulence_data <- left_join(aphid_virulence_data, strains_df, by = "treatment")
-
-aphid_virulence_data <- aphid_virulence_data %>%
-  mutate(species = replace_na(species, "Control"))
 ```
 
 # Load colors
@@ -68,7 +69,7 @@ strain_colors <- setNames(c(default_colors, "black"), strains_order)
 species_colors <- c(
   "P. fluorescens" = "dodgerblue2",
   "P. syringae" = "springgreen3",
-  "P. paralactis" = "sienna4",
+  "P. putida" = "sienna4",
   "Control" = "black")
 
 species_colors_manual <- c("194" = "sienna4", 
@@ -177,7 +178,7 @@ print(pairwise_tests)
 ### Plot Surival Dataframe at different times
 
 ```{r surival-barplot}
-surv_plot <- ggplot(data = surv_probs, aes(x = treatment, y = (1-surv_prob), color = species, fill = species, alpha = 0.95)) +
+surv_plot <- ggplot(data = surv_probs, aes(x = treatment, y = (1-surv_prob), color = species_complex, fill = species_complex, alpha = 0.95)) +
   geom_col() +
   geom_errorbar(aes(ymin = (1-surv_prob) - std_error_data, ymax = (1-surv_prob) + std_error_data), 
                 width = 0.3,  # Width of error bars
@@ -233,28 +234,30 @@ epi_growth_clean <- epi_growth_clean %>%
 
 # Calculate the mean and SD CFU per strain for each plant rep letter and retain the specified columns
 epi_growth_mean_per_rep <- epi_growth_clean %>%
-  group_by(strain, plant_rep_letter) %>%
+  group_by(treatment, plant_rep_letter) %>%
   summarise(
     mean_CFU_per_10_leafdiscs = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
     sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE),
     sample = first(sample),
     person = first(person),
+    species_complex = first(species_complex),
     block = first(block),
-    species = first(species),
+    treatment = first(treatment),
     plant_rep = first(plant_rep),
     .groups = 'drop'
   )
 
 # Calculate the mean and SD CFU per strain for each plant rep letter and retain the specified columns
 epi_growth_mean_per_strain <- epi_growth_clean %>%
-  group_by(strain) %>%
+  group_by(treatment) %>%
   summarise(
     mean_CFU_per_10_leafdiscs = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
     sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE),
     sample = first(sample),
     person = first(person),
+    species_complex = first(species_complex),
     block = first(block),
-    species = first(species),
+    treatment = first(treatment),
     plant_rep = first(plant_rep),
     .groups = 'drop'
   )
@@ -265,16 +268,15 @@ epi_growth_mean_per_strain
 ## Plot Epiphytic Growth
 
 ```{r epi-growth}
-epi_growth_species <- ggplot(data = epi_growth_mean_per_rep, aes(x = strain, y = mean_CFU_per_10_leafdiscs, color = species, fill = species)) +
+epi_growth_species <- ggplot(data = epi_growth_mean_per_rep, aes(x = treatment, y = mean_CFU_per_10_leafdiscs, color = species_complex, fill = species_complex)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
-  labs(title = "CFU per 10 Leaf Discs Across Samples",
-       x = "-80 Strain #",
-       y = "CFU per 10 Leaf Discs (Log10 Transformed)") +
+  labs(title = "CFU per 10 Leaf Discs Across Samples", x = "-80 Strain #", y = "CFU per 10 Leaf Discs (Log10 Transformed)") +
   theme_minimal() +
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
   scale_y_log10() +  # Apply log transformation to y-axis
+  scale_y_continuous(limits = c(10^2, 10^5.5) +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
 
@@ -284,9 +286,9 @@ epi_growth_species
 # Epiphytic growth stats
 
 ```{r epi-growth-stats}
-epi_growth_mod = lm(mean_CFU_per_10_leafdiscs ~ strain, data = epi_growth_mean_per_rep)
+epi_growth_mod = lm(mean_CFU_per_10_leafdiscs ~ treatment, data = epi_growth_mean_per_rep)
 
-emmeans(epi_growth_mod, pairwise ~ strain)
+emmeans(epi_growth_mod, pairwise ~ treatment)
 
 hist(resid(epi_growth_mod))
 ```
@@ -294,10 +296,6 @@ hist(resid(epi_growth_mod))
 # Combine epiphytic and virulence data
 
 ```{r combine-epi-virulence}
-# Assuming strain_stats has a column 'strain' and surv_probs has a column 'treatment'
-# Rename columns if necessary to match the key for joining
-epi_growth_mean_per_strain <- epi_growth_mean_per_strain %>% rename(treatment = strain)
-
 # Combine strain_stats and surv_probs using left_join
 epi_virulence_data <- left_join(epi_growth_mean_per_strain, surv_probs, by = "treatment")
 
@@ -313,13 +311,13 @@ correlation <- -1*cor(epi_virulence_data$surv_prob, epi_virulence_data$mean_CFU_
 ```{r epi-virulence-plot}
 # Create scatter plot for 72 hours
 epi_virulence_plot_strains <- ggplot(epi_virulence_data, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob)) +
-  geom_point(aes(color = species.y)) +
+  geom_point(aes(color = species_complex.y)) +
   geom_smooth(method = "lm", se = TRUE, color = "black", fill = "black", alpha = 0.15, linewidth = 0.5) +
   labs(title = "72 Hours",
        x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
        y = "Aphid Mortality at 72 Hours (%)",  
        caption = paste("Pearson's Correlation Coefficient:", round(correlation, 2))) +
-  scale_x_continuous(trans = "log10") +  # Apply log transformation to x-axis
+  scale_x_continuous(trans = "log10", limits = c(10^2.5, 10^5.5)) +  # Apply log transformation to x-axis
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
   theme_minimal()
