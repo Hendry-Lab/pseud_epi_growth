@@ -108,6 +108,7 @@ km_fit <- survfit(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
 ```
 
 ### Extract survival probability
+
 ```{r test-survival}
 # Fit the survival model
 km_fit <- survfit(Surv(time, censored) ~ treatment, data = aphid_virulence_data)
@@ -193,6 +194,7 @@ surv_plot <- ggplot(data = surv_probs, aes(x = treatment, y = (1-surv_prob), col
        x = "-80 Strain #",
        y = "Aphid Mortality at 72 Hours (%)") +
   theme_minimal() +
+  coord_flip() +
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
   theme(plot.title = element_text(hjust = 0.5),
@@ -301,6 +303,7 @@ epi_growth_treatment <- ggplot(data = epi_growth_mean_per_rep,
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
   geom_beeswarm(stroke = 0.5, size = 0.8, alpha = 0.8) +
   theme_minimal() +
+  coord_flip() +
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
   scale_y_log10() +
