@@ -190,8 +190,7 @@ surv_plot <- ggplot(data = surv_probs, aes(x = treatment, y = (1-surv_prob), col
   geom_errorbar(aes(ymin = (1-surv_prob) - std_error_data, ymax = (1-surv_prob) + std_error_data), 
                 width = 0.3,  # Width of error bars
                 position = position_dodge(width = 0.9)) +  # Dodge bars slightly
-  labs(title = "72 hours",
-       x = "-80 Strain #",
+  labs(x = "-80 Strain #",
        y = "Aphid Mortality at 72 Hours (%)") +
   theme_minimal() +
   coord_flip() +
@@ -371,8 +370,7 @@ correlation <- -1*cor(epi_virulence_data$surv_prob, epi_virulence_data$mean_CFU_
 epi_virulence_plot_strains <- ggplot(epi_virulence_data, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob)) +
   geom_point(aes(color = species_complex.y)) +
   geom_smooth(method = "lm", se = TRUE, color = "black", fill = "black", alpha = 0.15, linewidth = 0.5) +
-  labs(title = "72 Hours",
-       x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
+  labs(x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
        y = "Aphid Mortality at 72 Hours (%)",  
        caption = paste("Pearson's Correlation Coefficient:", round(correlation, 2))) +
   scale_x_continuous(trans = "log10", limits = c(10^2.5, 10^5.5)) +  # Apply log transformation to x-axis
