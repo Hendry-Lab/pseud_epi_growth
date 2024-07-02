@@ -246,12 +246,12 @@ surv_curv_species
 
 ```{r mean-epi-growth}
 # Replace NA with a lower value or remove them for visualization
-# Remove rows with NA in CFU_per_10_leafdiscs
-epi_growth_clean <- epi_growth_data %>% 
-  filter(!is.na(CFU_per_10_leafdiscs))
+# Remove rows with NA in CFU_per_10_leafdiscs_log_10
+epi_growth_clean <- epi_growth_data %>%
+  filter(!is.na(CFU_per_10_leafdiscs_log_10))
 
-# Convert CFU_per_10_leafdiscs to numeric, handling scientific notation
-epi_growth_clean$CFU_per_10_leafdiscs <- as.numeric(gsub("<", "", epi_growth_clean$CFU_per_10_leafdiscs))
+# Convert CFU_per_10_leafdiscs_log_10 to numeric, handling scientific notation
+epi_growth_clean$CFU_per_10_leafdiscs_log_10 <- as.numeric(gsub("<", "", epi_growth_clean$CFU_per_10_leafdiscs_log_10))
 
 # Subset data to remove unfinished strains and extract the letter part from the 'plant_rep' column
 epi_growth_clean <- epi_growth_clean %>%
@@ -261,8 +261,8 @@ epi_growth_clean <- epi_growth_clean %>%
 epi_growth_mean_per_rep <- epi_growth_clean %>%
   group_by(treatment, plant_rep_letter) %>%
   summarise(
-    mean_CFU_per_10_leafdiscs = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
-    sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE),
+    CFU_per_10_leafdiscs_log_10 = mean(CFU_per_10_leafdiscs_log_10, na.rm = TRUE),
+    sd_CFU = sd(CFU_per_10_leafdiscs_log_10, na.rm = TRUE),
     sample = first(sample),
     person = first(person),
     species_complex = first(species_complex),
@@ -276,8 +276,8 @@ epi_growth_mean_per_rep <- epi_growth_clean %>%
 epi_growth_mean_per_strain <- epi_growth_clean %>%
   group_by(treatment) %>%
   summarise(
-    mean_CFU_per_10_leafdiscs = mean(CFU_per_10_leafdiscs, na.rm = TRUE),
-    sd_CFU = sd(CFU_per_10_leafdiscs, na.rm = TRUE),
+    CFU_per_10_leafdiscs_log_10 = mean(CFU_per_10_leafdiscs_log_10, na.rm = TRUE),
+    sd_CFU = sd(CFU_per_10_leafdiscs_log_10, na.rm = TRUE),
     sample = first(sample),
     person = first(person),
     species_complex = first(species_complex),
@@ -296,7 +296,7 @@ epi_growth_mean_per_strain
 # plot by treatment
 epi_growth_treatment <- ggplot(data = epi_growth_mean_per_rep,
                                aes(x = treatment, 
-                                   y = mean_CFU_per_10_leafdiscs,
+                                   y = CFU_per_10_leafdiscs_log_10,
                                    color = species_complex,
                                    fill = species_complex)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
@@ -305,7 +305,7 @@ epi_growth_treatment <- ggplot(data = epi_growth_mean_per_rep,
   coord_flip() +
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
-  scale_y_log10() +
+  scale_y_continuous(limits = c(2.5, 5.5)) +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom")
@@ -313,7 +313,7 @@ epi_growth_treatment <- ggplot(data = epi_growth_mean_per_rep,
 # plot by species complex
 epi_growth_species <- ggplot(data = epi_growth_mean_per_rep,
                                aes(x = species_complex, 
-                                   y = mean_CFU_per_10_leafdiscs,
+                                   y = CFU_per_10_leafdiscs_log_10,
                                    color = species_complex,
                                    fill = species_complex)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.3) +
@@ -321,7 +321,7 @@ epi_growth_species <- ggplot(data = epi_growth_mean_per_rep,
   theme_minimal() +
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
-  scale_y_log10() +
+  scale_y_continuous(limits = c(2.5, 5.5)) +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom")
@@ -336,14 +336,14 @@ epi_growth_species
 
 ```{r epi-growth-stats}
 # stats per treatment
-epi_growth_mod_treatment = lm(mean_CFU_per_10_leafdiscs ~ treatment, data = epi_growth_mean_per_rep)
+epi_growth_mod_treatment = lm(CFU_per_10_leafdiscs_log_10 ~ treatment, data = epi_growth_mean_per_rep)
 
 emmeans(epi_growth_mod_treatment, pairwise ~ treatment)
 
 hist(resid(epi_growth_mod_treatment))
 
 # stats per species
-epi_growth_mod_species = lm(mean_CFU_per_10_leafdiscs ~ species_complex, data = epi_growth_mean_per_rep)
+epi_growth_mod_species = lm(CFU_per_10_leafdiscs_log_10 ~ species_complex, data = epi_growth_mean_per_rep)
 
 emmeans(epi_growth_mod_species, pairwise ~ species_complex)
 
@@ -360,20 +360,20 @@ epi_virulence_data <- left_join(epi_growth_mean_per_strain, surv_probs, by = "tr
 print(epi_virulence_data)
 
 # Calculate correlation coefficient between survival probability and epiphytic growth ability
-correlation <- -1*cor(epi_virulence_data$surv_prob, epi_virulence_data$mean_CFU_per_10_leafdiscs, method = "pearson")
+correlation <- -1*cor(epi_virulence_data$surv_prob, epi_virulence_data$CFU_per_10_leafdiscs_log_10, method = "pearson")
 ```
 
 # Plot epi virulence plot
 
 ```{r epi-virulence-plot}
 # Create scatter plot for 72 hours
-epi_virulence_plot_strains <- ggplot(epi_virulence_data, aes(x = mean_CFU_per_10_leafdiscs, y = 1-surv_prob)) +
+epi_virulence_plot_strains <- ggplot(epi_virulence_data, aes(x = CFU_per_10_leafdiscs_log_10, y = 1-surv_prob)) +
   geom_point(aes(color = species_complex.y)) +
   geom_smooth(method = "lm", se = TRUE, color = "black", fill = "black", alpha = 0.15, linewidth = 0.5) +
   labs(x = "Mean CFU per 10 Leaf Discs (Log Transformed)",
        y = "Aphid Mortality at 72 Hours (%)",  
        caption = paste("Pearson's Correlation Coefficient:", round(correlation, 2))) +
-  scale_x_continuous(trans = "log10", limits = c(10^2.5, 10^5.5)) +  # Apply log transformation to x-axis
+  scale_x_continuous(limits = c(2.5, 5.5)) +  
   scale_fill_manual(values = species_colors) +
   scale_color_manual(values = species_colors) +
   theme_minimal()
