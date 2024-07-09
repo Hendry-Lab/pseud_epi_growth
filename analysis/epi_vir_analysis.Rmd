@@ -27,7 +27,7 @@ knitr::opts_chunk$set(echo = TRUE, tidy.opts = list, tidy = TRUE, fig.align = "c
 # Load Libraries
 
 ```{r load-packages}
-pacman::p_load(ggplot2, readxl, RColorBrewer, paletteer, viridis, wesanderson, ggbeeswarm, dplyr, tidyverse, devtools, emmeans, cowplot, knitr, survival, here, tibble, survminer, lubridate, formatR, gridExtra, ggsurvfit, gtsummary, tidycmprsk, install = FALSE)
+pacman::p_load(ggplot2, readxl, BiocManager, RColorBrewer, paletteer, ggbeeswarm, dplyr, tidyverse, devtools, emmeans, cowplot, knitr, survival, here, tibble, survminer, lubridate, formatR, gridExtra, ggsurvfit, ggtree, treeio, gtsummary, tidycmprsk, install = FALSE)
 ```
 
 # Load Data
@@ -54,6 +54,9 @@ aphid_virulence_data$treatment <- factor(aphid_virulence_data$treatment, levels 
 
 # Join the strains dataframe to virulence
 aphid_virulence_data <- left_join(aphid_virulence_data, strains_df, by = "treatment")
+
+# Set a seed for this analysis
+set.seed(03132001)
 ```
 
 # Load colors
@@ -379,6 +382,29 @@ epi_virulence_plot_strains <- ggplot(epi_virulence_data, aes(x = CFU_per_10_leaf
   theme_minimal()
 
 epi_virulence_plot_strains
+```
+
+# Make Phylogenetic Tree of Strains
+
+```{r phylotree}
+# Load the tree from the .contree file
+tree <- read.tree("tree/EpiVir_IQTree_2024july9/EpiVir_DNA_consensus.contree")
+
+# reroot outgroup
+# Identify the outgroup tip and its parent node
+outgroup_label <- "Outgroup_Ecoli_NR_024570.1"
+outgroup_tip <- which(tree$tip.label == outgroup_label)
+outgroup_parent_node <- tree$edge[tree$edge[, 2] == outgroup_tip, 1]
+
+# Reroot the tree
+rerooted_tree <- root(tree, node = outgroup_parent_node)
+
+# Visualize the tree with customizations
+ggtree(rerooted_tree, branch.length="none") + 
+  geom_tiplab(color = "purple") + 
+  geom_tippoint() + 
+  geom_text(aes(label=node), hjust=-.3) + 
+  geom_cladelabel(node=17, label="Some random clade", color="red", offset=.8)
 ```
 
 ------------------------------------------------------------------------
