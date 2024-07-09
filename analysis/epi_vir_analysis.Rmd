@@ -27,7 +27,7 @@ knitr::opts_chunk$set(echo = TRUE, tidy.opts = list, tidy = TRUE, fig.align = "c
 # Load Libraries
 
 ```{r load-packages}
-pacman::p_load(ggplot2, readxl, BiocManager, RColorBrewer, paletteer, ggbeeswarm, dplyr, tidyverse, devtools, emmeans, cowplot, knitr, survival, here, tibble, survminer, lubridate, formatR, gridExtra, ggsurvfit, ggtree, treeio, gtsummary, tidycmprsk, install = FALSE)
+pacman::p_load(ggplot2, readxl, BiocManager, RColorBrewer, paletteer, aplot, ggbeeswarm, dplyr, tidyverse, devtools, emmeans, cowplot, phangorn, knitr, survival, here, tibble, survminer, lubridate, formatR, gridExtra, ggsurvfit, ggtree, treeio, gtsummary, phytools, tidycmprsk, install = FALSE)
 ```
 
 # Load Data
@@ -388,23 +388,32 @@ epi_virulence_plot_strains
 
 ```{r phylotree}
 # Load the tree from the .contree file
-tree <- read.tree("tree/EpiVir_IQTree_2024july9/EpiVir_DNA_consensus.contree")
+tree <- read.tree("tree/EpiVir_IQTree_2024july9/EpiVir_16S.contree")
 
-# reroot outgroup
-# Identify the outgroup tip and its parent node
-outgroup_label <- "Outgroup_Ecoli_NR_024570.1"
-outgroup_tip <- which(tree$tip.label == outgroup_label)
-outgroup_parent_node <- tree$edge[tree$edge[, 2] == outgroup_tip, 1]
-
-# Reroot the tree
-rerooted_tree <- root(tree, node = outgroup_parent_node)
+# Root the tree at the midpoint
+midpoint_tree <- midpoint(tree)
 
 # Visualize the tree with customizations
-ggtree(rerooted_tree, branch.length="none") + 
-  geom_tiplab(color = "purple") + 
-  geom_tippoint() + 
-  geom_text(aes(label=node), hjust=-.3) + 
-  geom_cladelabel(node=17, label="Some random clade", color="red", offset=.8)
+phylo_tree <- ggtree(midpoint_tree) + 
+  geom_tiplab(color = "purple", hjust = -0.3, align=TRUE) + 
+  geom_tippoint() #+ 
+  #geom_text(aes(label=node), hjust=-1) 
+  #+ geom_cladelabel(node=17, label="Some random clade", color="red", offset=.8)
+
+phylo_tree
+```
+
+# Combine my tree and my barplot
+
+```{r tree_with_barplot, eval=FALSE}
+# https://4va.github.io/biodatasci/r-ggtree.html#connecting_taxa
+# https://yulab-smu.top/treedata-book/chapter7.html
+
+surv_plot_no_legend
+
+surv_plot_no_legend %>%
+  insert_left(phylo_tree)
+# note: the tips are not lining up properly
 ```
 
 ------------------------------------------------------------------------
