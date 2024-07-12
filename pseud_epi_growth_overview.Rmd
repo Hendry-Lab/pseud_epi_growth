@@ -4,6 +4,7 @@ date: "`r Sys.Date()`"
 output:
   pdf_document:
     toc: true
+    latex_engine: xelatex
   word_document:
     toc: true
     reference_docx: templates/wordstyletemplate.docx
@@ -26,29 +27,23 @@ Obtain data on epiphytic growth ability of different *Pseudomonas* strains to co
 
 # Progress
 
-```{r load-data}
-pseud_epi_growth_2024summer_R <- read_excel("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/pseud_epi_growth_2024summer_R.xlsx")
-
-aphid_virulence_data <- read_csv("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/others_data/virulence_new_all.csv")
-```
-
 ## Strains (from virulence assay)
 
 | Strain  | Person | Reps |
 |---------|--------|------|
 | B728a   | Sara   | 3    |
-| 205     | Sara   | 2\*  |
-| 215     | Sara   | 2    |
-| 216     | Sara   | 3\*  |
-| 220     | Sara   | 3\*  |
+| 205     | Sara   | 3    |
+| 215     | Sara   | 3    |
+| 216     | Sara   | 3    |
+| 220     | Sara   | 3    |
 | 227     | Sara   | 3    |
-| 228     | Sara   | 3\*  |
+| 228     | Sara   | 3    |
 | 194     | Havi   | 3    |
 | 204     | Havi   | 3    |
 | 14      | Havi   | 3    |
-| 6       | Havi   | 0    |
+| 6       | Havi   | 3    |
 | **200** | Havi   | 3    |
-| **221** | Havi   | 0    |
+| **221** | Havi   | 3    |
 
 # Protocol
 
@@ -97,12 +92,10 @@ aphid_virulence_data <- read_csv("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/
     -   Add 10 mL of 10mM MgCl2 buffer to falcon tubes.
 4.  Sonicate falcon tubes for 10 min.
 5.  Vortex to dislodge epiphytic bacteria.
-6.  Make serial dilutions (2 technical replicate/sample) in 96 well plate using multichannel pipette.
-    -   900 uL buffer and 100 uL sample/dilution.
-7.  Plate serial dilutions on KB + NA (15 ug/mL) + NFT (50 ug/mL) plates.
-    -   4 plates per sample
-
-    -   100 ul per plate
+6.  Make serial dilutions (Undiluted aka UD, 10^-1^, and 10^-2^) in 96 well plate using multichannel pipette.
+    -   450 uL buffer and 50 uL sample/dilution.
+7.  Plate 100 ul of each serial dilutions on KB + NA (15 ug/mL) + NFT (50 ug/mL) plates (2 technical replicates/dilution).
+    -   6 plates per plant, 18 plates per pot
 8.  Allow plates to dry then flip upside and incubate at 28C for 24 hrs.
 
 **Day 5: Counting**
@@ -110,3 +103,25 @@ aphid_virulence_data <- read_csv("~/Desktop/Cornell/Hendry Lab/pseud-epi-growth/
 1.  Photograph plates.
 2.  Count colonies on each plate and note in spreadsheet.
 3.  Calculate CFU/10 mL bacterial resuspension (ie. per sample).
+
+# Results
+
+## Raw Spreadsheet
+
+![](data/data_summary/data_summary_1.png)
+
+![](data/data_summary/data_summary_2.png)
+
+## Figures
+
+![](figures/epi-growth-1.png){width="500"}
+
+![](figures/epi-growth-2.png){width="500"}
+
+![](figures/epi-virulence-plot-1.png){width="500"}
+
+![](figures/Kaplan-Meier-1.png){width="500"}
+
+![](figures/Kaplan-Meier-2.png){width="500"}
+
+![](figures/surival-barplot-1.png){width="500"}

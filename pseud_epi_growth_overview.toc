@@ -1,0 +1,7 @@
+\contentsline {section}{Project Goals}{1}{section*.2}%
+\contentsline {section}{Progress}{1}{section*.3}%
+\contentsline {subsection}{Strains (from virulence assay)}{1}{section*.4}%
+\contentsline {section}{Protocol}{2}{section*.5}%
+\contentsline {section}{Results}{4}{section*.6}%
+\contentsline {subsection}{Raw Spreadsheet}{4}{section*.7}%
+\contentsline {subsection}{Figures}{6}{section*.8}%
