@@ -397,7 +397,7 @@ midpoint_tree <- midpoint(tree)
 phylo_tree <- ggtree(midpoint_tree) + 
   geom_tiplab(size = 3, hjust = -0.1, align=TRUE) + 
   geom_tippoint() +
-  xlim(0, 0.09)
+  ggplot2::xlim(0, 0.14)
   #+ 
   #geom_text(aes(label=node), hjust=-1) 
   #+ geom_cladelabel(node=17, label="Some random clade", color="red", offset=.8)
